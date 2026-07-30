@@ -109,7 +109,7 @@ def _drc_reg_writes(drc) -> list[RegisterWrite]:
         RegisterWrite(DRC_PARAM_REGISTERS[3], drc.attack_coe_msb),
         RegisterWrite(DRC_PARAM_REGISTERS[4], drc.release_coe_msb),
         RegisterWrite(DRC_PARAM_REGISTERS[5], drc.ratio_mixed),
-        RegisterWrite(DRC_PARAM_REGISTERS[6], drc.gain_compute),
+        RegisterWrite(DRC_PARAM_REGISTERS[6], drc.gain_margin),
         RegisterWrite(DRC_PARAM_REGISTERS[7], drc.noise_gate),
         RegisterWrite(DRC_PARAM_REGISTERS[8], drc.timeout_gain_balance),
         RegisterWrite(DRC_PARAM_REGISTERS[9], drc.makeup_gain),

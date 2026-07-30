@@ -30,7 +30,7 @@ class DRCParams:
     attack_val: int = 0               # REG20+22[3:2]: 10-bit [0, 1023]
     release_val: int = 0              # REG21+22[1:0]: 10-bit [0, 1023]
     update_window: int = 96           # REG19: [0, 255], ≥96 recommended
-    gain_compute: int = 0x42          # REG23: [0x40, 0xFF]
+    gain_margin_db: float = 0.258     # REG23: Q8.8, val = round(dB * 256)
     noise_gate_db: float = -69.977    # REG24: val [0,255], dB [-88.98, -57.10]
     gain_balance: int = 0             # REG25[1:0]: 0=indep, 1=L, 2=R, 3=max
     makeup_gain_db: float = 0.0       # REG26: absolute dB [0, 31.875]

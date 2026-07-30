@@ -34,7 +34,7 @@ class DrcRegisters:
     attack_coe_msb: int  # REG20
     release_coe_msb: int  # REG21
     ratio_mixed: int  # REG22
-    gain_compute: int  # REG23
+    gain_margin: int  # REG23
     noise_gate: int  # REG24
     timeout_gain_balance: int  # REG25
     makeup_gain: int  # REG26

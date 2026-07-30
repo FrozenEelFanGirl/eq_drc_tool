@@ -118,16 +118,20 @@ class DRCPanel(QScrollArea):
         self._ratio_combo.addItems(RATIO_LABELS)
         self._ratio_combo.setCurrentIndex(4)
 
-        # Gain Compute: [0x40, 0xFF] = [64, 255]
-        self._gc_slider = QSlider(Qt.Horizontal)
-        self._gc_slider.setRange(64, 255)
-        self._gc_slider.setValue(0x42)
-        self._gc_spin = QSpinBox()
-        self._gc_spin.setRange(64, 255)
-        self._gc_spin.setValue(0x42)
-        self._gc_spin.setDisplayIntegerBase(16)
-        self._gc_slider.valueChanged.connect(self._gc_spin.setValue)
-        self._gc_spin.valueChanged.connect(self._gc_slider.setValue)
+        # Gain Margin: Q8.8 dB [0.25, 0.996], step 1/256 → slider [64, 255]
+        self._gm_slider = QSlider(Qt.Horizontal)
+        self._gm_slider.setRange(64, 255)
+        self._gm_slider.setValue(0x42)
+        self._gm_spin = QDoubleSpinBox()
+        self._gm_spin.setRange(0.25, 1.0)
+        self._gm_spin.setDecimals(3)
+        self._gm_spin.setSingleStep(1.0 / 256)
+        self._gm_spin.setValue(0.258)
+        self._gm_spin.setSuffix(" dB")
+        self._gm_slider.valueChanged.connect(
+            lambda v: self._gm_spin.setValue(v / 256))
+        self._gm_spin.valueChanged.connect(
+            lambda v: self._gm_slider.setValue(max(64, min(255, round(v * 256)))))
 
         # Noise Gate: val [0, 255], dB [-88.98, -57.10]
         self._ng_slider = QSlider(Qt.Horizontal)
@@ -191,7 +195,7 @@ class DRCPanel(QScrollArea):
         self._add_row("drc.release", _pair(self._rel_slider, self._rel_spin), "drc.release")
         self._form.addRow("", self._rel_time_label)
         self._add_row("drc.ratio", self._ratio_combo, "drc.ratio")
-        self._add_row("drc.gain_compute", _pair(self._gc_slider, self._gc_spin), "drc.gain_compute")
+        self._add_row("drc.gain_margin", _pair(self._gm_slider, self._gm_spin), "drc.gain_margin")
         self._add_row("drc.noise_gate", _pair(self._ng_slider, self._ng_spin), "drc.noise_gate")
         self._add_row("drc.gain_balance", self._bal_combo, "drc.gain_balance")
         self._add_row("drc.makeup_gain", _pair(self._mu_slider, self._mu_spin), "drc.makeup_gain")
@@ -254,7 +258,7 @@ class DRCPanel(QScrollArea):
             attack_val=self._att_spin.value(),
             release_val=self._rel_spin.value(),
             update_window=self._win_spin.value(),
-            gain_compute=self._gc_spin.value(),
+            gain_margin_db=self._gm_spin.value(),
             noise_gate_db=self._ng_spin.value(),
             gain_balance=self._bal_combo.currentIndex(),
             makeup_gain_db=self._mu_spin.value(),
@@ -280,7 +284,7 @@ class DRCPanel(QScrollArea):
         self._att_spin.valueChanged.connect(lambda _: _ch())
         self._rel_spin.valueChanged.connect(lambda _: _ch())
         self._ratio_combo.currentIndexChanged.connect(lambda _: slot())
-        self._gc_spin.valueChanged.connect(lambda _: slot())
+        self._gm_spin.valueChanged.connect(lambda _: slot())
         self._ng_spin.valueChanged.connect(lambda _: slot())
         self._bal_combo.currentIndexChanged.connect(lambda _: slot())
         self._mu_spin.valueChanged.connect(lambda _: slot())

@@ -316,7 +316,7 @@ REG16 = 0x00               # Release clock force
 | REG20 | 0x0000206A | `drc_attack_coe[9:2]` (MSB 8) | Q1.15 exp decay |
 | REG21 | 0x0000206B | `drc_release_coe[9:2]` (MSB 8) | Q1.15 exp decay |
 | REG22 | 0x0000206C | Ratio + attack[1:0] + release[1:0] | Mixed bits |
-| REG23 | 0x0000206D | `drc_gain_compute_floating` | Threshold smoothing (≥ 0x40) |
+| REG23 | 0x0000206D | `drc_gain_compute_floating` | Q8.8 absolute, exact = {8'd0, val} (≥ 0x40) |
 | REG24 | 0x0000206E | `drc_noise_gate` | Scaled (exact = {3'd0, val, 5'd0}) |
 | REG25 | 0x0000206F | Timeout + gain balance mode | Mixed bits |
 | REG26 | 0x0000205E | `drc_makeup_gain` | Scaled (exact = {3'd0, val, 5'd0}) |

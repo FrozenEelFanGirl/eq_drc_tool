@@ -45,6 +45,9 @@ class HardwareDrcDesigner:
         # dB = val - 88.98, so val = round(dB + 89)
         mo_val = max(0, min(255, round(params.max_output_db + 89)))
 
+        # Gain margin: dB → val (Q8.8, val = round(dB * 256))
+        gm_val = max(64, min(255, round(params.gain_margin_db * 256)))
+
         # Timeout fixed to 0, balance in low 2 bits
         timeout_balance = params.gain_balance & 3
 
@@ -55,7 +58,7 @@ class HardwareDrcDesigner:
             attack_coe_msb=(params.attack_val >> 2) & 0xFF,
             release_coe_msb=(params.release_val >> 2) & 0xFF,
             ratio_mixed=ratio_mixed,
-            gain_compute=params.gain_compute,
+            gain_margin=gm_val,
             noise_gate=ng_val,
             timeout_gain_balance=timeout_balance,
             makeup_gain=mu_val,
