@@ -6,6 +6,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('../doc/ref/guildlines', 'doc/ref/guildlines'),
+        ('../doc/ref/copyright', 'doc/ref/copyright'),
     ],
     hiddenimports=['PySide6', 'pyqtgraph', 'numpy'],
     hookspath=[],

@@ -39,6 +39,7 @@ from ..scripts.config_io import export_config, import_config
 from .drc_panel import DRCPanel
 from .eq_panel import EQPanel
 from .help_dialog import HelpDialog
+from .copyright_dialog import CopyrightDialog
 from .i18n import Lang, _, detect_os_language, set_language
 from .plot_canvas import PlotCanvas
 

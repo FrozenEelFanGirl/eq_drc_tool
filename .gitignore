@@ -25,6 +25,7 @@ doc/*
 !doc/ref/
 doc/ref/*
 !doc/ref/guildlines/
+!doc/ref/copyright/
 
 # Tests
 test/

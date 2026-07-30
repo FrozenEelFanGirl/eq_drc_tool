@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -30,6 +31,13 @@ from PySide6.QtWidgets import (
 )
 
 from ..gui.i18n import Lang, tr
+
+if getattr(sys, 'frozen', False):
+    _ROOT = Path(sys._MEIPASS)
+else:
+    _ROOT = Path(__file__).parent.parent.parent.parent
+
+LOGO_PATH = _ROOT / "doc" / "ref" / "copyright" / "company.png"
 
 MIT_TEXT_EN = """MIT License
 
