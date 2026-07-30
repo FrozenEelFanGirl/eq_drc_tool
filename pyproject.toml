@@ -1,6 +1,6 @@
 [project]
 name = "eq_drc_tool"
-version = "0.1.0"
+version = "0.1.2"
 description = "PySide6 GUI for configuring SoundWire DAC 7-band biquad EQ and DRC with real-time frequency response visualization and register-write script generation"
 requires-python = ">=3.12"
 dependencies = [
