@@ -84,7 +84,7 @@ class CopyrightDialog(QDialog):
 
     def __init__(self, lang: Lang, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(tr("menu.help.about", lang))
+        self.setWindowTitle(tr("dialog.about_title", lang))
         self.resize(600, 500)
 
         layout = QVBoxLayout(self)
