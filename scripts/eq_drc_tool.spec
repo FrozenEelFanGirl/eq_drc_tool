@@ -1,12 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+
+_project_root = os.path.abspath(os.path.join(SPECPATH, '..'))
 
 a = Analysis(
-    ['run.py'],
-    pathex=['..'],
+    [os.path.join(SPECPATH, 'run.py')],
+    pathex=[_project_root],
     binaries=[],
     datas=[
-        ('../doc/ref/guildlines', 'doc/ref/guildlines'),
-        ('../doc/ref/copyright', 'doc/ref/copyright'),
+        (os.path.join(_project_root, 'doc', 'ref', 'guildlines'), 'doc/ref/guildlines'),
+        (os.path.join(_project_root, 'doc', 'ref', 'copyright'), 'doc/ref/copyright'),
     ],
     hiddenimports=['PySide6', 'pyqtgraph', 'numpy'],
     hookspath=[],
