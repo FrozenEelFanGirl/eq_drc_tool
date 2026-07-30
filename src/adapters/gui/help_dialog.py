@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -30,7 +31,10 @@ from PySide6.QtWidgets import (
 
 from ..gui.i18n import Lang, tr
 
-DOC_ROOT = Path(__file__).parent.parent.parent.parent / "doc" / "ref"
+if getattr(sys, 'frozen', False):
+    DOC_ROOT = Path(sys._MEIPASS) / "doc" / "ref"
+else:
+    DOC_ROOT = Path(__file__).parent.parent.parent.parent / "doc" / "ref"
 HELP_FILES = {
     "eq_guide": {
         Lang.EN: DOC_ROOT / "guildlines" / "EQ调试指南.md",

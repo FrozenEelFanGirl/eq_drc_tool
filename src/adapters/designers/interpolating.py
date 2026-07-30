@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 import re
+import sys
 from pathlib import Path
 
 from ...domain.eq.coefficients import BiquadCoefficients
@@ -60,7 +61,10 @@ def load_coefficients(path: str | Path | None = None) -> None:
     """Load coefficient lookup table from coe_array.txt."""
     global _LUT
     if path is None:
-        path = Path(__file__).parent.parent.parent.parent / 'doc' / 'old_backup' / 'coe_array.txt'
+        if getattr(sys, 'frozen', False):
+            path = Path(sys._MEIPASS) / 'doc' / 'old_backup' / 'coe_array.txt'
+        else:
+            path = Path(__file__).parent.parent.parent.parent / 'doc' / 'old_backup' / 'coe_array.txt'
     _LUT = _parse_coe_array(Path(path))
 
 

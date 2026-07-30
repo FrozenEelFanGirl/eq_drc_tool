@@ -5,6 +5,7 @@ __pycache__/
 dist/
 build/
 *.spec
+!eq_drc_tool.spec
 
 # Virtual environment
 .venv/
