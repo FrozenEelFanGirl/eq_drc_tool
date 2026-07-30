@@ -76,6 +76,8 @@ python -m pytest test/ -v
 - `test_protocol.py` — FSM rules
 - `test_integration.py` — full pipeline: params -> designer -> .bat
 
+See [TODO.md](TODO.md) for known test coverage gaps.
+
 ## License
 
 MIT — Copyright (c) 2026 FrozenEelFanGirl & Senary
