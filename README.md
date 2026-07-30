@@ -21,16 +21,24 @@ real-time frequency response visualization and register-write script generation.
 
 ## Requirements
 
-- Python ≥ 3.12
-- PySide6 ≥ 6.11
-- pyqtgraph ≥ 0.14
-- numpy ≥ 2.5
+- Python >= 3.12
+- PySide6 >= 6.11
+- pyqtgraph >= 0.14
+- numpy >= 2.5
 
 ## Quick Start
 
 ```
 pip install -r requirements.txt
 python -m src.main
+```
+
+## Build Standalone .exe
+
+```
+pip install pyinstaller
+pyinstaller scripts/eq_drc_tool.spec
+# Output: dist/eq_drc_tool.exe (~64 MB, no Python installation needed)
 ```
 
 ## Architecture
@@ -46,16 +54,27 @@ src/
 │   ├── ports.py      ScriptFormatter, Observer protocols
 │   ├── eq_session.py Observable 7-band state with per-band bypass
 │   ├── drc_session.py Observable DRC state
-│   └── script_composer.py  EQ + DRC → list[RegisterWrite]
+│   └── script_composer.py  EQ + DRC -> list[RegisterWrite]
 ├── adapters/         GUI, file I/O, concrete implementations
-│   ├── designers/    RBJDesigner, InterpolatingDesigner, HardwareDrcDesigner
+│   ├── designers/    RBJDesigner, HardwareDrcDesigner
 │   ├── scripts/      BatScriptFormatter, config_io
 │   └── gui/          MainWindow, EQPanel, DRCPanel, PlotCanvas, i18n
 └── main.py           Composition root (dependency injection)
 ```
 
-Dependencies point inward: adapters → application → domain. The domain layer
+Dependencies point inward: adapters -> application -> domain. The domain layer
 imports nothing from PySide6, pyqtgraph, or the filesystem.
+
+## Testing
+
+```
+python -m pytest test/ -v
+```
+
+- `test_quantizer.py` — Q2.14 quantizer math + inline golden RBJ validation
+- `test_register_map.py` — address generation
+- `test_protocol.py` — FSM rules
+- `test_integration.py` — full pipeline: params -> designer -> .bat
 
 ## License
 

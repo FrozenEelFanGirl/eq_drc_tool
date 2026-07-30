@@ -22,8 +22,8 @@ Four structural layers achieve this, mapped directly to this project.
 | Principle | In this project |
 |-----------|----------------|
 | Core logic owns the interface | `FilterDesigner` is a Protocol defined in `domain/eq/designer.py`. It declares "given params, return coefficients." The domain owns this contract. |
-| Adapters implement the interface | `InterpolatingDesigner` (Phase 1) and `RBJDesigner` (Phase 2) both satisfy `FilterDesigner`. The core calls the port — it never knows which implementation is wired in. |
-| Swap without touching core | Switching from interpolation to RBJ cookbook requires changing one line in the composition root. `eq_session.py`, `frequency_response.py`, the GUI — zero changes. |
+| Adapters implement the interface | `RBJDesigner` satisfies `FilterDesigner`. The core calls the port — it never knows which implementation is wired in. |
+| Swap without touching core | A new designer implementation requires changing one line in the composition root (`main.py`). `eq_session.py`, `frequency_response.py`, the GUI — zero changes. |
 
 ```python
 # domain/eq/designer.py — the port (owned by core)
@@ -73,7 +73,7 @@ class ExeExporter:
 |-------|----------------|---------------------------|
 | **Domain** (innermost) | Pure business logic, value objects, ports | `FilterParams`, `BiquadCoefficients`, `DesignedCoefficients`, `QuantizedCoefficients`, `FilterDesigner` (port), `FrequencyResponse`, `RegisterWrite` |
 | **Application** | Orchestration, session state, commands | `EQSession`, `DRCSession`, `ScriptComposer` |
-| **Adapters** (outermost) | GUI, file I/O, script formatting, concrete designers | `MainWindow`, `BatScriptFormatter`, `InterpolatingDesigner`, `pyqtgraph PlotWidget` |
+| **Adapters** (outermost) | GUI, file I/O, script formatting, concrete designers | `MainWindow`, `BatScriptFormatter`, `RBJDesigner`, `pyqtgraph PlotWidget` |
 
 ```
      ┌──────────────────────────┐
@@ -127,20 +127,30 @@ eq_script/
 │   │   ├── drc_session.py
 │   │   └── script_composer.py
 │   ├── adapters/
-│   │   ├── designers/   (interpolating.py, rbj.py, drc_hardware.py)
+│   │   ├── designers/   (rbj.py, drc_hardware.py)
 │   │   ├── scripts/     (bat_formatter.py, config_io.py)
 │   │   └── gui/         (main_window, eq_panel, drc_panel, plot_canvas, widgets, i18n, help_dialog, copyright_dialog, coefficient_view)
-│   └── main.py
+│   └── main.py          (composition root)
+├── scripts/
+│   ├── run.py            (PyInstaller entry point)
+│   └── eq_drc_tool.spec  (PyInstaller build config)
+├── test/
+│   ├── conftest.py       (--real-hardware option)
+│   ├── test_quantizer.py (quantizer + inline golden RBJ test)
+│   ├── test_integration.py
+│   ├── test_protocol.py  (FSM rules)
+│   └── test_register_map.py
 ├── doc/
 │   ├── ref/
 │   │   ├── DAC.docx              (CT_DAC register specification, REG1–REG27)
 │   │   ├── rbj_cookbook.html     (RBJ biquad coefficient formulas)
-│   │   └── example_bat/
-│   │       ├── eq/               (init, write, read, bypass working examples)
-│   │       └── drc/              (enable, disable, reference config)
-│   └── old_backup/              (legacy CLI + coe data, preserved for reference)
+│   │   ├── guildlines/           (EQ/DRC tuning guides — bundled in .exe)
+│   │   └── example_bat/          (working .bat examples)
+│   └── old_backup/               (legacy CLI tools, preserved for reference)
+├── pyproject.toml
 ├── requirements.txt
-└── Makefile / pyproject.toml
+├── CLAUDE.md
+└── README.md
 ```
 
 ### Layer Architecture
@@ -174,7 +184,6 @@ eq_script/
 
 | Adapter | Implements |
 |---------|------------|
-| `designers/interpolating.py` | `InterpolatingDesigner` — exact lookup from pre-computed coe_array.txt |
 | `designers/rbj.py` | `RBJDesigner` — RBJ Audio EQ Cookbook biquad formulas |
 | `designers/drc_hardware.py` | `HardwareDrcDesigner` — converts DRCParams → DrcRegisters |
 | `scripts/bat_formatter.py` | `BatScriptFormatter` — .bat file with PowerShell register writes |
@@ -407,16 +416,13 @@ Axis configuration (ranges, log/linear mode) is **separated** from data updates:
   This eliminates separate `quantize()` calls in the application layer.
 - `dequantize(value)` and `unpack_to_coeffs(q)` are shared in `quantizer.py` —
   the single source of truth for Q2.14 ↔ float conversion. No duplicated dequant
-  logic in `frequency_response.py` or `interpolating.py`.
+  logic in `frequency_response.py`.
 - `DRCParams` is `frozen=True` (same as `FilterParams`) — prevents aliasing bugs
   from shared mutable defaults.
 
-### Coefficient Source Strategy
-- **Phase 1**: `InterpolatingDesigner` — interpolate between pre-computed values in
-  `doc/old_backup/coe_array.txt` for continuous slider ranges
-- **Phase 2**: `RBJDesigner` — RBJ cookbook formulas (ref: `doc/ref/rbj_cookbook.html`)
-  as a drop-in strategy plugin
-- Both implement `FilterDesigner` port; switching requires one line change
+### Coefficient Source
+- `RBJDesigner` — RBJ Audio EQ Cookbook formulas (ref: `doc/ref/rbj_cookbook.html`).
+  Computes biquad coefficients analytically at runtime — no pre-computed lookup tables.
 
 ### Feature Switches
 - Per-band EQ bypass (writes bypass coefficients, omitted from freq response)
@@ -430,23 +436,36 @@ Axis configuration (ranges, log/linear mode) is **separated** from data updates:
 
 ### Deployment
 - Develop in project-specific Python venv with pip-installed dependencies
-- Package with PyInstaller `--onefile` → portable .exe, no installation
+- Package with PyInstaller via `scripts/eq_drc_tool.spec` → portable .exe (~64 MB), no installation
+- Build tooling in `scripts/`: `run.py` (entry point), `eq_drc_tool.spec` (build config)
+- Release: tag with `pyproject.toml` version → build → upload to GitHub Releases
 - Target: Windows first, Linux possible later
 
 ## Testing
 
-See `doc/test_platform.md` for the full test platform specification.
-Summary of test layers:
+| Layer | What it validates |
+|--------|-------------------|
+| Designer | `RBJDesigner.design()` → correct Q2.14 hex. Golden data (21 peak + bypass entries at 48k/96k/192k) is inline in `test_quantizer.py`. |
+| Quantizer | Float coeffs → Q2.14 32-bit packed words. Hand-computed expected values for bypass, negated feedback, range clamping. |
+| Register Map | Bank/stage/group → correct REG14 address (`test_register_map.py`). |
+| Protocol | Write/read/reset sequences obey FSM rules (`test_protocol.py`). Uses `StubDesigner`. |
+| Integration | Full pipeline: params → designer → quantizer → .bat script (`test_integration.py`). |
 
-| Layer | What it validates | Golden reference |
-|--------|-------------------|------------------|
-| Designer | `FilterDesigner.design()` → correct `BiquadCoefficients` | `coe_array.txt` (105 entries) |
-| Quantizer | Float coeffs → Q2.14 32-bit packed words | `coe_array.txt` exact hex |
-| Register Map | Bank/stage/group → correct REG14 address | Protocol spec |
-| Script Composer | Session state → correct `RegisterWrite` sequence | Example BAT files |
-| BAT Formatter | `RegisterWrite` list → byte-identical `.bat` text | Example BAT files |
-| Protocol | Write/read/reset sequences obey FSM rules | `doc/eq_drc_protocol.md` |
-| Integration | Full pipeline: params → designer → quantizer → .bat | Derived golden BATs |
+Run: `python -m pytest test/ -v`
+
+## Deployment
+
+Build the standalone `.exe`:
+
+```
+pip install pyinstaller
+pyinstaller scripts/eq_drc_tool.spec
+```
+
+Output: `dist/eq_drc_tool.exe` (~64 MB, self-contained, no Python installation needed).
+
+The `.spec` bundles `doc/ref/guildlines/` (help guides loaded at runtime).
+`pyproject.toml` version → Git tag → GitHub Release.
 
 ### SdwRegisterTool Interface
 

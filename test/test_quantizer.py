@@ -63,48 +63,66 @@ class TestQuantize:
         assert _pack(0x4053, 0x3F05) == 0x40533F05
 
 
-class TestGoldenCoefficients:
-    """Validate all 105 entries from coe_array.txt round-trip correctly."""
+# (sample_rate, freq_hz, Q) → (b0_b2, b1_na2, na1_unused)
+GOLDEN_PEAK = {
+    (48000, 1000, 9): (0x40533F05, 0x81BEC0A7, 0x7E420000),
+    (48000, 4000, 15): (0x40BE3DC4, 0x9271C17E, 0x6D8F0000),
+    (48000, 7000, 25): (0x40B53DDF, 0xB2F2C16C, 0x4D0E0000),
+    (48000, 10000, 25): (0x40DC3D6A, 0xDF51C1BA, 0x20AF0000),
+    (48000, 13000, 25): (0x40E23D59, 0x107AC1C6, 0xEF860000),
+    (48000, 16000, 25): (0x40C63DAE, 0x3F3AC18D, 0xC0C60000),
+    (48000, 19000, 15): (0x40E73D49, 0x641CC1D0, 0x9BE40000),
+    (96000, 1000, 9): (0x402A3F82, 0x809AC054, 0x7F660000),
+    (96000, 4000, 15): (0x40633ED6, 0x851DC0C7, 0x7AE30000),
+    (96000, 7000, 25): (0x40653ECF, 0x8DEAC0CC, 0x72160000),
+    (96000, 10000, 25): (0x408B3E5D, 0x9B52C118, 0x64AE0000),
+    (96000, 13000, 25): (0x40AC3DFB, 0xAC7EC159, 0x53820000),
+    (96000, 16000, 25): (0x40C63DAE, 0xC0C6C18D, 0x3F3A0000),
+    (96000, 19000, 15): (0x41643BCF, 0xD7C1C2CC, 0x283F0000),
+    (192000, 1000, 9): (0x40153FC1, 0x803CC02A, 0x7FC40000),
+    (192000, 4000, 15): (0x40323F69, 0x817CC065, 0x7E840000),
+    (192000, 7000, 25): (0x40343F63, 0x83BEC069, 0x7C420000),
+    (192000, 10000, 25): (0x404A3F22, 0x8758C094, 0x78A80000),
+    (192000, 13000, 25): (0x405F3EE3, 0x8C16C0BE, 0x73EA0000),
+    (192000, 16000, 25): (0x40733EA7, 0x91EEC0E6, 0x6E120000),
+    (192000, 19000, 15): (0x40DD3D67, 0x995EC1BC, 0x66A20000),
+}
 
-    def test_all_entries(self, coe_entries):
-        from src.adapters.designers.interpolating import (
-            InterpolatingDesigner,
-            load_coefficients,
-        )
+
+class TestRbjAgainstGolden:
+    """Validate RBJDesigner output against known-good packed coefficients."""
+
+    def test_bypass_all(self):
+        from src.adapters.designers.rbj import RBJDesigner
         from src.domain.eq.params import FilterParams, FilterType
 
-        load_coefficients()
-        designer = InterpolatingDesigner()
+        designer = RBJDesigner()
+        rates = [48000, 96000, 192000]
+        freqs = [1000, 4000, 7000, 10000, 13000, 16000, 19000]
+        for rate in rates:
+            for freq in freqs:
+                params = FilterParams(
+                    freq=float(freq), filter_type=FilterType.BYPASS,
+                    gain_db=0.0, Q=1.0,
+                )
+                result = designer.design(params, rate)
+                q = result.quantized
+                assert q.b0_b2 == 0x40000000
+                assert q.b1_na2 == 0x00000000
+                assert q.na1_unused == 0x00000000
 
-        # Group by (rate, freq, type) → verify each
-        seen = set()
-        for entry in coe_entries:
-            key = (entry["rate"], entry["freq"], entry["ftype"])
-            if key in seen:
-                continue
-            seen.add(key)
+    def test_peak_all(self):
+        from src.adapters.designers.rbj import RBJDesigner
+        from src.domain.eq.params import FilterParams, FilterType
 
+        designer = RBJDesigner()
+        for (rate, freq, Q), (exp_b0, exp_b1, exp_b2) in GOLDEN_PEAK.items():
             params = FilterParams(
-                freq=float(entry["freq"]),
-                filter_type=FilterType(entry["ftype"]),
-                gain_db=6.0,
-                Q=1.0,
+                freq=float(freq), filter_type=FilterType.PEAK,
+                gain_db=6.0, Q=float(Q),
             )
-            coeffs = designer.design(params, entry["rate"])
-            q = quantize(coeffs)
-
-            # Find expected values for this key
-            expected = {}
-            for e in coe_entries:
-                if (e["rate"], e["freq"], e["ftype"]) == key:
-                    expected[e["bgroup"]] = e["packed32"]
-
-            assert q.b0_b2 == expected[0], (
-                f"Mismatch B=0: rate={key[0]}, freq={key[1]}, type={key[2]}"
-            )
-            assert q.b1_na2 == expected[1], (
-                f"Mismatch B=1: rate={key[0]}, freq={key[1]}, type={key[2]}"
-            )
-            assert q.na1_unused == expected[2], (
-                f"Mismatch B=2: rate={key[0]}, freq={key[1]}, type={key[2]}"
-            )
+            result = designer.design(params, rate)
+            q = result.quantized
+            assert q.b0_b2 == exp_b0, f"fs={rate} f={freq} Q={Q}: b0_b2 mismatch"
+            assert q.b1_na2 == exp_b1, f"fs={rate} f={freq} Q={Q}: b1_na2 mismatch"
+            assert q.na1_unused == exp_b2, f"fs={rate} f={freq} Q={Q}: na1_unused mismatch"

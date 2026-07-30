@@ -33,7 +33,7 @@ class StubDesigner:
 
 
 def _make_writes():
-    eq = EQSession()
+    eq = EQSession(StubDesigner())
     drc = DRCSession()
     composer = ScriptComposer(StubDesigner())
     return composer.compose(eq, drc)

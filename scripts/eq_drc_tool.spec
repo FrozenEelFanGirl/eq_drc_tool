@@ -2,11 +2,10 @@
 
 a = Analysis(
     ['run.py'],
-    pathex=['.'],
+    pathex=['..'],
     binaries=[],
     datas=[
-        ('doc/old_backup/coe_array.txt', 'doc/old_backup'),
-        ('doc/ref/guildlines', 'doc/ref/guildlines'),
+        ('../doc/ref/guildlines', 'doc/ref/guildlines'),
     ],
     hiddenimports=['PySide6', 'pyqtgraph', 'numpy'],
     hookspath=[],
