@@ -23,6 +23,7 @@ Thumbs.db
 # Documentation (external reference only)
 doc/*
 !doc/ref/
+!doc/readme_fig/
 doc/ref/*
 !doc/ref/guildlines/
 !doc/ref/copyright/

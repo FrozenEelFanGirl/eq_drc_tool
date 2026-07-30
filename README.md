@@ -19,6 +19,16 @@ real-time frequency response visualization and register-write script generation.
 - **JSON config import/export** — save and restore EQ+DRC presets
 - **English / Chinese** — auto-detects OS language, switchable at runtime
 
+## Screenshot
+
+![eq_drc_tool GUI](doc/readme_fig/fig1.png)
+
+The GUI is a three-panel horizontal layout: the **EQ panel** on the left holds
+7 band strips with sliders, filter type selectors, and per-band bypass; the
+**DRC panel** in the center provides threshold, ratio, attack/release, makeup
+gain, noise gate, and output limiting controls; the **plot area** on the right
+shows real-time magnitude, phase, and DRC transfer curve tabs.
+
 ## Requirements
 
 - Python >= 3.12
